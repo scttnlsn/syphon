@@ -1,0 +1,19 @@
+{
+  "name": "syphon",
+  "description": "Immutable structure for React/Flux applications",
+  "version": "0.0.0",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --harmony --reporter dot"
+  },
+  "dependencies": {
+    "immutable": "^3.4.1",
+    "js-atom": "^0.1.0",
+    "js-csp": "^0.3.2",
+    "react": "^0.12.2"
+  },
+  "devDependencies": {
+    "chai": "^1.10.0",
+    "mocha": "^2.0.1",
+    "sinon": "^1.12.2"
+  }
+}
