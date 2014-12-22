@@ -5,6 +5,7 @@
   "homepage": "http://github.com/scttnlsn/syphon",
   "author": "Scott Nelson <scott@scttnlsn.com>",
   "keywords": ["react", "flux", "immutable"],
+  "main": "lib/index",
   "repository": {
     "type": "git",
     "url": "git://github.com/scttnlsn/syphon.git"
