@@ -1,6 +1,8 @@
 syphon
 ====
 
+[![Build Status](https://img.shields.io/travis/scttnlsn/syphon.svg?style=flat)](https://travis-ci.org/scttnlsn/syphon)
+
 Syphon is an implementation of the [Flux](https://facebook.github.io/flux/) architectural pattern for [React](http://facebook.github.io/react/) applications inspired by [ClojureScript](https://github.com/clojure/clojurescript) and [Om](https://github.com/swannodette/om).  It helps structure your application around a single immutable state value and implements the dispatching of actions to various state-transitioning handler functions.
 
 ## Example
@@ -178,7 +180,7 @@ To dispatch a value, call the `dispatch` function, passing the handler name and 
 dispatcher.dispatch('example', { foo: 'bar', baz: 123 });
 ```
 
-The dispatcher emits a `dispatch` event after a handler is called:
+The dispatcher emits a `dispatch` event after each handler is called:
 
 ```js
 dispatcher.on('dispatch', function (dispatch) {
