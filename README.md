@@ -1,6 +1,7 @@
 syphon
 ====
 
+[![NPM](https://img.shields.io/npm/v/syphon.svg?style=flat)](http://npm.im/syphon)
 [![Build Status](https://img.shields.io/travis/scttnlsn/syphon.svg?style=flat)](https://travis-ci.org/scttnlsn/syphon)
 
 Syphon is an implementation of the [Flux](https://facebook.github.io/flux/) architectural pattern for [React](http://facebook.github.io/react/) applications inspired by [ClojureScript](https://github.com/clojure/clojurescript) and [Om](https://github.com/swannodette/om).  It helps structure your application around a single immutable state value and implements the dispatching of actions to various state-transitioning handler functions.
@@ -189,6 +190,10 @@ dispatcher.on('dispatch', function (dispatch) {
    console.log(dispatch.state); // state returned from the handler
 });
 ```
+
+## Install
+
+    npm install syphon
 
 ## Runtime
 
