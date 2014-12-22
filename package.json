@@ -1,7 +1,7 @@
 {
   "name": "syphon",
   "description": "Immutable structure for React/Flux applications",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "scripts": {
     "test": "./node_modules/.bin/mocha --harmony --reporter dot"
   },
