@@ -191,6 +191,65 @@ dispatcher.on('dispatch', function (dispatch) {
 });
 ```
 
+## Components
+
+To mount your component hierarchy and automatically re-render when the state changes, Syphon provides the `root` function:
+
+```js
+syphon.root(MyComponent, state, {
+  dispatcher: dispatcher,
+  el: document.getElementById('app')
+});
+```
+
+Note: If you decide to render the components directly (foregoing use of `root`) you must start the dispatcher manually:
+
+```js
+dispatcher.start(state);
+```
+
+## Mixin
+
+The Syphon mixin adds some helpers to your components that make it easier to access application data and dispatch values.  Application state can be accessed via `this.data`:
+
+```js
+React.createComponent({
+  mixins: [syphon.mixin],
+
+  render: function () {
+    return React.DOM.p({}, this.data().get('text'));
+  }
+});
+```
+
+You can dispatch new values by calling `this.dispatch`:
+
+```js
+var MyComponent = React.createClass({
+  mixins: [syphon.mixin],
+
+  onClick: function () {
+    this.dispatch('example', 'button-clicked');
+  }
+});
+```
+
+The dispatcher is made available to all components in the hierarchy by passing it to `React.withContext` before rendering.  You can specify additional values to be shared with the component tree when calling `root` and access them in your components via `this.shared`:
+
+```js
+var MyComponent =React.createClass({
+  componentWillMount: function () {
+    console.log(this.shared().foo); // => 'bar'
+  }
+});
+
+syphon.room(MyComponent, state, {
+  dispatcher: dispatcher,
+  el: document.getElementById('app'),
+  shared: { foo: 'bar' }
+});
+```
+
 ## Install
 
     npm install syphon
