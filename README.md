@@ -109,6 +109,9 @@ Since it is common to have handlers branching on various input values, it can be
 var multimethod = require('multimethod');
 
 var example = multimethod()
+  .dispatch(function ([op, text], state) {
+    return op;
+  })
   .when('update-text', function ([_, text], state) {
     return state.set('text', text);
   })
@@ -123,6 +126,9 @@ It is also typical for a handler to have side-effects, however, since the handle
 
 ```js
 var example = multimethod()
+  .dispatch(function ([name, value], state) {
+    return name;
+  })
   .when('fetch-post', function ([_, id], state) {
     var self = this;
 
@@ -139,6 +145,9 @@ var example = multimethod()
   });
 
 var api = multimethod()
+  .dispatch(function ([name, value], state) {
+    return name;
+  })
   .when('fetch-post-success', function (post, state) {
     return state
       .set('loading', false)
