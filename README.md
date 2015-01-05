@@ -263,16 +263,6 @@ syphon.room(MyComponent, state, {
 
     npm install syphon
 
-## Runtime
-
-This module requires ES6 generator functions.
-
-* Firefox >= 27
-* Node.js >= 0.11.6 (with `--harmony` flag)
-* Chrome >= 28 (with "Experimental JavaScript" enabled)
-* [Regenerator](http://facebook.github.io/regenerator/)
-* [Traceur](https://github.com/google/traceur-compiler)
-
 ## License
 
 The MIT License (MIT)

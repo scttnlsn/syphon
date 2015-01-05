@@ -11,12 +11,11 @@
     "url": "git://github.com/scttnlsn/syphon.git"
   },
   "scripts": {
-    "test": "./node_modules/.bin/mocha --harmony --reporter dot"
+    "test": "./node_modules/.bin/mocha --reporter dot"
   },
   "dependencies": {
     "immutable": "^3.4.1",
     "js-atom": "^0.1.0",
-    "js-csp": "^0.3.2",
     "react": "^0.12.2"
   },
   "devDependencies": {
