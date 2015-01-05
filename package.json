@@ -1,7 +1,7 @@
 {
   "name": "syphon",
   "description": "Immutable structure for React/Flux applications",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "homepage": "http://github.com/scttnlsn/syphon",
   "author": "Scott Nelson <scott@scttnlsn.com>",
   "keywords": ["react", "flux", "immutable"],
