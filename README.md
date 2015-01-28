@@ -252,7 +252,7 @@ var MyComponent =React.createClass({
   }
 });
 
-syphon.room(MyComponent, state, {
+syphon.root(MyComponent, state, {
   dispatcher: dispatcher,
   el: document.getElementById('app'),
   shared: { foo: 'bar' }
