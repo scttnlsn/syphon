@@ -4,7 +4,11 @@
   "version": "0.1.2",
   "homepage": "http://github.com/scttnlsn/syphon",
   "author": "Scott Nelson <scott@scttnlsn.com>",
-  "keywords": ["react", "flux", "immutable"],
+  "keywords": [
+    "react",
+    "flux",
+    "immutable"
+  ],
   "main": "lib/index",
   "repository": {
     "type": "git",
@@ -19,6 +23,7 @@
     "react": "^0.12.2"
   },
   "devDependencies": {
+    "browserify": "^8.1.1",
     "chai": "^1.10.0",
     "mocha": "^2.0.1",
     "sinon": "^1.12.2"
