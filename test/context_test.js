@@ -63,12 +63,16 @@ describe('Context', function () {
       this.render.restore();
     });
 
+    it('calls render', function () {
+      expect(this.render.callCount).to.eq(1);
+    });
+
     it('calls render on state change', function () {
       this.state.swap(function (state) {
         return state.set('text', 'world');
       });
 
-      expect(this.render.callCount).to.eq(1);
+      expect(this.render.callCount).to.eq(2);
     });
   });
 });
