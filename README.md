@@ -246,7 +246,9 @@ var MyComponent = React.createClass({
 The dispatcher is made available to all components in the hierarchy by passing it to `React.withContext` before rendering.  You can specify additional values to be shared with the component tree when calling `root` and access them in your components via `this.shared`:
 
 ```js
-var MyComponent =React.createClass({
+var MyComponent = React.createClass({
+  mixins: [syphon.mixin],
+
   componentWillMount: function () {
     console.log(this.shared().foo); // => 'bar'
   }
