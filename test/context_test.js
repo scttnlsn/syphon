@@ -1,28 +1,14 @@
 var expect = require('chai').expect;
 var React = require('react');
 var sinon = require('sinon');
+var components = require('./components');
 var syphon = require('../lib/index');
 
 describe('Context', function () {
   beforeEach(function () {
     this.dispatcher = { dispatch: sinon.spy() };
     this.state = syphon.atom({ text: 'hello' });
-
-    this.component = React.createClass({
-      mixins: [syphon.mixin],
-
-      componentWillMount: function () {
-        this.dispatch('foo', 'bar');
-      },
-
-      render: function () {
-        return React.DOM.div({},
-          React.DOM.p({}, this.data().get('text')),
-          React.DOM.p({}, this.shared().foo));
-      }
-    });
-
-    this.context = syphon.context(this.component, this.state, {
+    this.context = syphon.context(components.Contextual, this.state, {
       shared: { foo: 'bar' },
       dispatcher: this.dispatcher
     });
@@ -73,6 +59,14 @@ describe('Context', function () {
       });
 
       expect(this.render.callCount).to.eq(2);
+    });
+  });
+
+  describe('#dirty', function () {
+    it('calls forceUpdate on component', function () {
+      var component = { forceUpdate: sinon.spy() };
+      this.context.dirty(component);
+      expect(component.forceUpdate.calledOnce).to.eq(true);
     });
   });
 });
