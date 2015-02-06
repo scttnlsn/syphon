@@ -6,6 +6,16 @@ syphon
 
 Syphon is an implementation of the [Flux](https://facebook.github.io/flux/) architectural pattern for [React](http://facebook.github.io/react/) applications inspired by [ClojureScript](https://github.com/clojure/clojurescript) and [Om](https://github.com/swannodette/om).  It helps structure your application around a single immutable state value and implements the dispatching of actions to various state-transitioning handler functions.
 
+* [Example](#example)
+* [State](#state)
+* [Handlers](#handlers)
+* [Dispatcher](#dispatcher)
+* [Components](#components)
+* [Observe](#observe)
+* [Mixin](#mixin)
+* [Install](#install)
+* [License](#license)
+
 ## Example
 
 ```javascript
@@ -34,7 +44,7 @@ var Component = React.createClass({
   render: function () {
     return React.DOM.div({},
       React.DOM.input({ onChange: this.setText }),
-      React.DOM.p({}, this.data().get('text')));
+      React.DOM.p({}, this.props.data.get('text')));
   }
 });
 
@@ -46,7 +56,7 @@ syphon.root(Component, state, {
 
 ## State
 
-Application state is stored in an [immutable](http://facebook.github.io/immutable-js/) data structure and passed as a prop to the React component hierarchy.  A single mutable reference to the immutable state is held in an [atom](https://github.com/cjohansen/js-atom):
+Application state is stored in an [immutable](http://facebook.github.io/immutable-js/) data structure and passed as a prop (called `data`) to the root component in the hierarchy.  A single mutable reference to the immutable state is held in an [atom](https://github.com/cjohansen/js-atom):
 
 ```js
 var state = syphon.atom({ foo: 'bar' });
@@ -211,27 +221,35 @@ syphon.root(MyComponent, state, {
 });
 ```
 
-Note: If you decide to render the components directly (foregoing use of `root`) you must start the dispatcher manually:
+On every render, your root component will receive the current (dereferenced) state in a prop called `data`.  Your component can then pass parts of the state to child components and so on.
 
-```js
-dispatcher.start(state);
-```
+## Observe
 
-## Mixin
+You may encounter cases where your data hierarchy does not directly correspond to your component hierarchy and a component needs to access application state it was not passed as a prop.  In these cases you can observe arbitrary paths in the application state:
 
-The Syphon mixin adds some helpers to your components that make it easier to access application data and dispatch values.  Application state can be accessed via `this.data`:
-
-```js
-React.createComponent({
+```javascript
+var Component = React.createClass({
   mixins: [syphon.mixin],
 
+  componentWillMount: function () {
+    this.text = this.observe(['path', 'to', 'text']);
+  },
+
   render: function () {
-    return React.DOM.p({}, this.data().get('text'));
+    return React.DOM.p({}, this.text());
   }
 });
 ```
 
-You can dispatch new values by calling `this.dispatch`:
+Syphon tracks which components are observing certain paths and ensures that they update when the application state changes at those paths.
+
+## Mixin
+
+The Syphon mixin adds some helpers to your components that make it easier to dispatch values, observe state, and access shared data.  It also implements React's `shouldComponentUpdate` method to take advantage of fast immutable data structure equality checks.
+
+By using the mixin you can...
+
+Dispatch new values:
 
 ```js
 var MyComponent = React.createClass({
@@ -243,7 +261,7 @@ var MyComponent = React.createClass({
 });
 ```
 
-The dispatcher is made available to all components in the hierarchy by passing it to `React.withContext` before rendering.  You can specify additional values to be shared with the component tree when calling `root` and access them in your components via `this.shared`:
+Share data with the entire component hierarchy:
 
 ```js
 var MyComponent = React.createClass({
@@ -261,6 +279,22 @@ syphon.root(MyComponent, state, {
 });
 ```
 
+And observe application state:
+
+```javascript
+var MyComponent = React.createClass({
+  mixins: [syphon.mixin],
+
+  componentWillMount: function () {
+    this.text = this.observe(['path', 'to', 'text']);
+  },
+
+  render: function () {
+    return React.DOM.p({}, this.text());
+  }
+});
+```
+
 ## Install
 
     npm install syphon
@@ -269,7 +303,7 @@ syphon.root(MyComponent, state, {
 
 The MIT License (MIT)
 
-Copyright (c) 2014 Scott Nelson
+Copyright (c) 2014-2015 Scott Nelson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
