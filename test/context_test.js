@@ -61,12 +61,4 @@ describe('Context', function () {
       expect(this.render.callCount).to.eq(2);
     });
   });
-
-  describe('#dirty', function () {
-    it('calls forceUpdate on component', function () {
-      var component = { forceUpdate: sinon.spy() };
-      this.context.dirty(component);
-      expect(component.forceUpdate.calledOnce).to.eq(true);
-    });
-  });
 });

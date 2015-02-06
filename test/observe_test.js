@@ -14,16 +14,25 @@ describe('Observe', function () {
     expect(this.context.render()).to.include('hello');
   });
 
-  it('calls dirty method with observing component', function () {
-    var dirty = sinon.stub(this.context, 'dirty');
+  it('calls dirty listener with observing component', function (done) {
+    var dirty = this.context.observers.listeners('dirty')[0];
+    this.context.observers.removeAllListeners();
+    this.context.observers.on('dirty', function (component) {
+      expect(component.name).to.eq('child');
+      done();
+    });
 
     this.context.watch();
 
     this.state.swap(function (state) {
       return state.set('text', 'world');
     });
+  });
 
-    expect(dirty.calledOnce).to.eq(true);
-    expect(dirty.getCall(0).args[0].name).to.eq('child');
+  it('forces component to update', function () {
+    var dirty = this.context.observers.listeners('dirty')[0];
+    var component = { forceUpdate: sinon.spy() };
+    dirty(component);
+    expect(component.forceUpdate.calledOnce).to.eq(true);
   });
 });
