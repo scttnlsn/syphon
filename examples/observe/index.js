@@ -38,8 +38,6 @@ var Child = React.createClass({
 });
 
 var Component = React.createClass({
-  mixins: [syphon.mixin],
-
   render: function () {
     // Notice that we are not passing any props to the child
     return React.createElement(Child);
