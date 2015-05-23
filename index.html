@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Syphon by scttnlsn</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Syphon</h1>
+      <h2 class="project-tagline">Immutable structure for React/Flux applications</h2>
+      <a href="https://github.com/scttnlsn/syphon" class="btn">View on GitHub</a>
+      <a href="https://github.com/scttnlsn/syphon/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/scttnlsn/syphon/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="syphon" class="anchor" href="#syphon" aria-hidden="true"><span class="octicon octicon-link"></span></a>syphon</h1>
+
+<p><a href="http://npm.im/syphon"><img src="https://img.shields.io/npm/v/syphon.svg?style=flat" alt="NPM"></a>
+<a href="https://travis-ci.org/scttnlsn/syphon"><img src="https://img.shields.io/travis/scttnlsn/syphon.svg?style=flat" alt="Build Status"></a></p>
+
+<p>Syphon is an implementation of the <a href="https://facebook.github.io/flux/">Flux</a> architectural pattern for <a href="http://facebook.github.io/react/">React</a> applications inspired by <a href="https://github.com/clojure/clojurescript">ClojureScript</a> and <a href="https://github.com/swannodette/om">Om</a>.  It helps structure your application around a single immutable state value and implements the dispatching of actions to various state-transitioning handler functions.</p>
+
+<ul>
+<li><a href="#example">Example</a></li>
+<li><a href="#state">State</a></li>
+<li><a href="#handlers">Handlers</a></li>
+<li><a href="#dispatcher">Dispatcher</a></li>
+<li><a href="#components">Components</a></li>
+<li><a href="#observe">Observe</a></li>
+<li><a href="#mixin">Mixin</a></li>
+<li><a href="#install">Install</a></li>
+<li><a href="#license">License</a></li>
+</ul>
+
+<h2>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span class="octicon octicon-link"></span></a>Example</h2>
+
+<div class="highlight highlight-javascript"><pre><span class="pl-k">var</span> syphon <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">'</span>syphon<span class="pl-pds">'</span></span>);
+
+<span class="pl-k">var</span> state <span class="pl-k">=</span> syphon.atom({ text<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>Hello World<span class="pl-pds">'</span></span> });
+
+<span class="pl-k">var</span> dispatcher <span class="pl-k">=</span> syphon.dispatcher({
+  <span class="pl-en">example</span>: <span class="pl-k">function</span> ([<span class="pl-smi">name</span>, <span class="pl-smi">value</span>], <span class="pl-smi">state</span>) {
+    <span class="pl-k">switch</span> (name) {
+      <span class="pl-k">case</span> <span class="pl-s"><span class="pl-pds">'</span>update-text<span class="pl-pds">'</span></span><span class="pl-k">:</span>
+        <span class="pl-k">return</span> state.set(<span class="pl-s"><span class="pl-pds">'</span>text<span class="pl-pds">'</span></span>, value);
+      <span class="pl-k">default</span><span class="pl-k">:</span>
+        <span class="pl-k">return</span> state;
+    }
+  }
+});
+
+<span class="pl-k">var</span> Component <span class="pl-k">=</span> React.createClass({
+  mixins<span class="pl-k">:</span> [syphon.mixin],
+
+  <span class="pl-en">setText</span>: <span class="pl-k">function</span> (<span class="pl-smi">e</span>) {
+    <span class="pl-v">this</span>.dispatch(<span class="pl-s"><span class="pl-pds">'</span>example<span class="pl-pds">'</span></span>, [<span class="pl-s"><span class="pl-pds">'</span>update-text<span class="pl-pds">'</span></span>, e.currentTarget.<span class="pl-c1">value</span>]);
+  },
+
+  <span class="pl-en">render</span>: <span class="pl-k">function</span> () {
+    <span class="pl-k">return</span> React.DOM.div({},
+      React.DOM.<span class="pl-c1">input</span>({ <span class="pl-c1">onChange</span><span class="pl-k">:</span> <span class="pl-v">this</span>.setText }),
+      React.DOM.p({}, <span class="pl-v">this</span>.props.<span class="pl-c1">data</span>.get(<span class="pl-s"><span class="pl-pds">'</span>text<span class="pl-pds">'</span></span>)));
+  }
+});
+
+syphon.root(Component, state, {
+  dispatcher<span class="pl-k">:</span> dispatcher,
+  el<span class="pl-k">:</span> <span class="pl-c1">document</span>.<span class="pl-c1">getElementById</span>(<span class="pl-s"><span class="pl-pds">'</span>app<span class="pl-pds">'</span></span>)
+});</pre></div>
+
+<h2>
+<a id="state" class="anchor" href="#state" aria-hidden="true"><span class="octicon octicon-link"></span></a>State</h2>
+
+<p>Application state is stored in an <a href="http://facebook.github.io/immutable-js/">immutable</a> data structure and passed as a prop (called <code>data</code>) to the root component in the hierarchy.  A single mutable reference to the immutable state is held in an <a href="https://github.com/cjohansen/js-atom">atom</a>:</p>
+
+<div class="highlight highlight-js"><pre><span class="pl-k">var</span> state <span class="pl-k">=</span> syphon.atom({ foo<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>bar<span class="pl-pds">'</span></span> });</pre></div>
+
+<p>To access the value inside the atom you must <code>deref</code> it:</p>
+
+<div class="highlight highlight-js"><pre><span class="pl-k">var</span> data <span class="pl-k">=</span> state.deref();</pre></div>
+
+<p>This will return the <a href="http://facebook.github.io/immutable-js/">Immutable.js</a> data structure.  Since the data cannot be mutated directly, our only way to update the application state is to swap the atom's reference with a new state value:</p>
+
+<div class="highlight highlight-js"><pre><span class="pl-k">var</span> state <span class="pl-k">=</span> syphon.atom({ foo<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>bar<span class="pl-pds">'</span></span> });
+
+state.swap(<span class="pl-k">function</span> (<span class="pl-smi">current</span>) {
+  <span class="pl-c">// `current` is an Immutable.js map</span>
+  <span class="pl-en">console</span><span class="pl-c1">.log</span>(current.toJS());
+  <span class="pl-c">// =&gt; { foo: 'bar' }</span>
+
+  <span class="pl-c">// Return a new state by modifying the current state.</span>
+  <span class="pl-c">// Refer to the Immutable.js docs for availble methods.</span>
+  <span class="pl-k">return</span> current.set(<span class="pl-s"><span class="pl-pds">'</span>foo<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>baz<span class="pl-pds">'</span></span>);
+});
+
+<span class="pl-en">console</span><span class="pl-c1">.log</span>(state.deref().toJS());
+<span class="pl-c">// =&gt; { foo: 'baz' }</span></pre></div>
+
+<p>Handlers (see below) are responsible for implementing these state transitioning functions.</p>
+
+<p>You can watch for state changes via a callback:</p>
+
+<div class="highlight highlight-js"><pre>state.addWatch(<span class="pl-s"><span class="pl-pds">'</span>mywatcher<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">key</span>, <span class="pl-smi">ref</span>, <span class="pl-smi">old</span>, <span class="pl-smi">state</span>) {
+  <span class="pl-en">console</span><span class="pl-c1">.log</span>(<span class="pl-s"><span class="pl-pds">'</span>the state is now:<span class="pl-pds">'</span></span>, state);
+});</pre></div>
+
+<p>Refer to the <a href="https://github.com/cjohansen/js-atom">js-atom</a> docs for more information about atoms.</p>
+
+<h2>
+<a id="handlers" class="anchor" href="#handlers" aria-hidden="true"><span class="octicon octicon-link"></span></a>Handlers</h2>
+
+<p>Handlers are functions of the form:</p>
+
+<div class="highlight highlight-js"><pre><span class="pl-k">function</span> (<span class="pl-smi">value</span>, <span class="pl-smi">currentState</span>) {
+  <span class="pl-k">return</span> newState;
+}</pre></div>
+
+<ul>
+<li>The first argument is the dispatched value.</li>
+<li>The second argument is the current (dereferenced) application state.</li>
+<li>The handler must return a new immutable state.  Refer to the <a href="http://facebook.github.io/immutable-js/">Immutable.js</a> docs for information about mofifying the state.</li>
+</ul>
+
+<p>Since it is common to have handlers branching on various input values, it can be helpful to use the <a href="http://npm.im/multimethod">multimethod</a> module:</p>
+
+<div class="highlight highlight-js"><pre><span class="pl-k">var</span> multimethod <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">'</span>multimethod<span class="pl-pds">'</span></span>);
+
+<span class="pl-k">var</span> example <span class="pl-k">=</span> multimethod()
+  .dispatch(<span class="pl-k">function</span> ([<span class="pl-smi">op</span>, <span class="pl-smi">text</span>], <span class="pl-smi">state</span>) {
+    <span class="pl-k">return</span> op;
+  })
+  .when(<span class="pl-s"><span class="pl-pds">'</span>update-text<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> ([<span class="pl-smi">_</span>, <span class="pl-smi">text</span>], <span class="pl-smi">state</span>) {
+    <span class="pl-k">return</span> state.set(<span class="pl-s"><span class="pl-pds">'</span>text<span class="pl-pds">'</span></span>, text);
+  })
+  .when(<span class="pl-s"><span class="pl-pds">'</span>uppercase-text<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> ([<span class="pl-smi">_</span>, <span class="pl-smi">text</span>], <span class="pl-smi">state</span>) {
+    <span class="pl-k">return</span> state.set(<span class="pl-s"><span class="pl-pds">'</span>text<span class="pl-pds">'</span></span>, state.get(<span class="pl-s"><span class="pl-pds">'</span>text<span class="pl-pds">'</span></span>).<span class="pl-c1">toUpperCase</span>());
+  });
+
+dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>example<span class="pl-pds">'</span></span>, example);</pre></div>
+
+<p>It is also typical for a handler to have side-effects, however, since the handler functions are called synchronously, any asynchronous results must re-dispatched and handled elsewhere:</p>
+
+<div class="highlight highlight-js"><pre><span class="pl-k">var</span> example <span class="pl-k">=</span> multimethod()
+  .dispatch(<span class="pl-k">function</span> ([<span class="pl-smi">name</span>, <span class="pl-smi">value</span>], <span class="pl-smi">state</span>) {
+    <span class="pl-k">return</span> name;
+  })
+  .when(<span class="pl-s"><span class="pl-pds">'</span>fetch-post<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> ([<span class="pl-smi">_</span>, <span class="pl-smi">id</span>], <span class="pl-smi">state</span>) {
+    <span class="pl-k">var</span> self <span class="pl-k">=</span> <span class="pl-v">this</span>;
+
+    <span class="pl-c">// Make network request</span>
+    fetchPost(id, <span class="pl-k">function</span> (<span class="pl-smi">err</span>, <span class="pl-smi">post</span>) {
+      <span class="pl-k">if</span> (err) {
+        self.dispatch(<span class="pl-s"><span class="pl-pds">'</span>api<span class="pl-pds">'</span></span>, [<span class="pl-s"><span class="pl-pds">'</span>fetch-post-error<span class="pl-pds">'</span></span>, err]);
+      } <span class="pl-k">else</span> {
+        self.dispatch(<span class="pl-s"><span class="pl-pds">'</span>api<span class="pl-pds">'</span></span>, [<span class="pl-s"><span class="pl-pds">'</span>fetch-post-success<span class="pl-pds">'</span></span>, post]);
+      }
+    });
+
+    <span class="pl-k">return</span> state.set(<span class="pl-s"><span class="pl-pds">'</span>loading<span class="pl-pds">'</span></span>, <span class="pl-c1">true</span>);
+  });
+
+<span class="pl-k">var</span> api <span class="pl-k">=</span> multimethod()
+  .dispatch(<span class="pl-k">function</span> ([<span class="pl-smi">name</span>, <span class="pl-smi">value</span>], <span class="pl-smi">state</span>) {
+    <span class="pl-k">return</span> name;
+  })
+  .when(<span class="pl-s"><span class="pl-pds">'</span>fetch-post-success<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">post</span>, <span class="pl-smi">state</span>) {
+    <span class="pl-k">return</span> state
+      .set(<span class="pl-s"><span class="pl-pds">'</span>loading<span class="pl-pds">'</span></span>, <span class="pl-c1">false</span>)
+      .set(<span class="pl-s"><span class="pl-pds">'</span>post<span class="pl-pds">'</span></span>, post);
+  })
+  .when(<span class="pl-s"><span class="pl-pds">'</span>fetch-post-error<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">err</span>, <span class="pl-smi">state</span>) {
+    <span class="pl-k">return</span> state
+      .set(<span class="pl-s"><span class="pl-pds">'</span>loading<span class="pl-pds">'</span></span>, <span class="pl-c1">false</span>)
+      .set(<span class="pl-s"><span class="pl-pds">'</span>notice<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>There was an error fetching the post.<span class="pl-pds">'</span></span>)
+      .set(<span class="pl-s"><span class="pl-pds">'</span>error<span class="pl-pds">'</span></span>, err);
+  });
+
+dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>example<span class="pl-pds">'</span></span>, example);
+dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>api<span class="pl-pds">'</span></span>, api);</pre></div>
+
+<h2>
+<a id="dispatcher" class="anchor" href="#dispatcher" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dispatcher</h2>
+
+<p>You will typically only need a single dispatcher per application since it can coordinate multiple handlers.  To add handlers to a dispatcher either pass them to the constructor or call the <code>handler</code> function:</p>
+
+<div class="highlight highlight-js"><pre><span class="pl-k">var</span> dispatcher <span class="pl-k">=</span> syphon.dispatcher({
+  <span class="pl-en">example</span>: <span class="pl-k">function</span> (<span class="pl-smi">value</span>, <span class="pl-smi">state</span>) { ... },
+  <span class="pl-en">api</span>: <span class="pl-k">function</span> (<span class="pl-smi">value</span>, <span class="pl-smi">state</span>) { ... }
+});</pre></div>
+
+<p>or</p>
+
+<div class="highlight highlight-js"><pre><span class="pl-k">var</span> dispatcher <span class="pl-k">=</span> syphon.dispatcher();
+
+dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>example<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">value</span>, <span class="pl-smi">state</span>) { ... });
+dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>api<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">value</span>, <span class="pl-smi">state</span>) { ... });</pre></div>
+
+<p>To dispatch a value, call the <code>dispatch</code> function, passing the handler name and any contextual value:</p>
+
+<div class="highlight highlight-js"><pre>dispatcher.dispatch(<span class="pl-s"><span class="pl-pds">'</span>example<span class="pl-pds">'</span></span>, { foo<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>bar<span class="pl-pds">'</span></span>, baz<span class="pl-k">:</span> <span class="pl-c1">123</span> });</pre></div>
+
+<p>The dispatcher emits a <code>dispatch</code> event after each handler is called:</p>
+
+<div class="highlight highlight-js"><pre>dispatcher.on(<span class="pl-s"><span class="pl-pds">'</span>dispatch<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">dispatch</span>) {
+   <span class="pl-en">console</span><span class="pl-c1">.log</span>(dispatch.<span class="pl-c1">name</span>);  <span class="pl-c">// name of the handler invoked</span>
+   <span class="pl-en">console</span><span class="pl-c1">.log</span>(dispatch.<span class="pl-c1">value</span>); <span class="pl-c">// value passed to the handler</span>
+   <span class="pl-en">console</span><span class="pl-c1">.log</span>(dispatch.state); <span class="pl-c">// state returned from the handler</span>
+});</pre></div>
+
+<h2>
+<a id="components" class="anchor" href="#components" aria-hidden="true"><span class="octicon octicon-link"></span></a>Components</h2>
+
+<p>To mount your component hierarchy and automatically re-render when the state changes, Syphon provides the <code>root</code> function:</p>
+
+<div class="highlight highlight-js"><pre>syphon.root(MyComponent, state, {
+  dispatcher<span class="pl-k">:</span> dispatcher,
+  el<span class="pl-k">:</span> <span class="pl-c1">document</span>.<span class="pl-c1">getElementById</span>(<span class="pl-s"><span class="pl-pds">'</span>app<span class="pl-pds">'</span></span>)
+});</pre></div>
+
+<p>On every render, your root component will receive the current (dereferenced) state in a prop called <code>data</code>.  Your component can then pass parts of the state to child components and so on.</p>
+
+<h2>
+<a id="observe" class="anchor" href="#observe" aria-hidden="true"><span class="octicon octicon-link"></span></a>Observe</h2>
+
+<p>You may encounter cases where your data hierarchy does not directly correspond to your component hierarchy and a component needs to access application state it was not passed as a prop.  In these cases you can observe arbitrary paths in the application state:</p>
+
+<div class="highlight highlight-javascript"><pre><span class="pl-k">var</span> Component <span class="pl-k">=</span> React.createClass({
+  mixins<span class="pl-k">:</span> [syphon.mixin],
+
+  <span class="pl-en">componentWillMount</span>: <span class="pl-k">function</span> () {
+    <span class="pl-v">this</span>.<span class="pl-c1">text</span> <span class="pl-k">=</span> <span class="pl-v">this</span>.observe([<span class="pl-s"><span class="pl-pds">'</span>path<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>to<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>text<span class="pl-pds">'</span></span>]);
+  },
+
+  <span class="pl-en">render</span>: <span class="pl-k">function</span> () {
+    <span class="pl-k">return</span> React.DOM.p({}, <span class="pl-v">this</span>.<span class="pl-c1">text</span>());
+  }
+});</pre></div>
+
+<p>Syphon tracks which components are observing certain paths and ensures that they update when the application state changes at those paths.</p>
+
+<h2>
+<a id="mixin" class="anchor" href="#mixin" aria-hidden="true"><span class="octicon octicon-link"></span></a>Mixin</h2>
+
+<p>The Syphon mixin adds some helpers to your components that make it easier to dispatch values, observe state, and access shared data.  It also implements React's <code>shouldComponentUpdate</code> method to take advantage of fast immutable data structure equality checks.</p>
+
+<p>By using the mixin you can...</p>
+
+<p>Dispatch new values:</p>
+
+<div class="highlight highlight-js"><pre><span class="pl-k">var</span> MyComponent <span class="pl-k">=</span> React.createClass({
+  mixins<span class="pl-k">:</span> [syphon.mixin],
+
+  <span class="pl-en">onClick</span>: <span class="pl-k">function</span> () {
+    <span class="pl-v">this</span>.dispatch(<span class="pl-s"><span class="pl-pds">'</span>example<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>button-clicked<span class="pl-pds">'</span></span>);
+  }
+});</pre></div>
+
+<p>Share data with the entire component hierarchy:</p>
+
+<div class="highlight highlight-js"><pre><span class="pl-k">var</span> MyComponent <span class="pl-k">=</span> React.createClass({
+  mixins<span class="pl-k">:</span> [syphon.mixin],
+
+  <span class="pl-en">componentWillMount</span>: <span class="pl-k">function</span> () {
+    <span class="pl-en">console</span><span class="pl-c1">.log</span>(<span class="pl-v">this</span>.shared().foo); <span class="pl-c">// =&gt; 'bar'</span>
+  }
+});
+
+syphon.root(MyComponent, state, {
+  dispatcher<span class="pl-k">:</span> dispatcher,
+  el<span class="pl-k">:</span> <span class="pl-c1">document</span>.<span class="pl-c1">getElementById</span>(<span class="pl-s"><span class="pl-pds">'</span>app<span class="pl-pds">'</span></span>),
+  shared<span class="pl-k">:</span> { foo<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>bar<span class="pl-pds">'</span></span> }
+});</pre></div>
+
+<p>And observe application state:</p>
+
+<div class="highlight highlight-javascript"><pre><span class="pl-k">var</span> MyComponent <span class="pl-k">=</span> React.createClass({
+  mixins<span class="pl-k">:</span> [syphon.mixin],
+
+  <span class="pl-en">componentWillMount</span>: <span class="pl-k">function</span> () {
+    <span class="pl-v">this</span>.<span class="pl-c1">text</span> <span class="pl-k">=</span> <span class="pl-v">this</span>.observe([<span class="pl-s"><span class="pl-pds">'</span>path<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>to<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>text<span class="pl-pds">'</span></span>]);
+  },
+
+  <span class="pl-en">render</span>: <span class="pl-k">function</span> () {
+    <span class="pl-k">return</span> React.DOM.p({}, <span class="pl-v">this</span>.<span class="pl-c1">text</span>());
+  }
+});</pre></div>
+
+<h2>
+<a id="install" class="anchor" href="#install" aria-hidden="true"><span class="octicon octicon-link"></span></a>Install</h2>
+
+<pre><code>npm install syphon
+</code></pre>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span class="octicon octicon-link"></span></a>License</h2>
+
+<p>The MIT License (MIT)</p>
+
+<p>Copyright (c) 2014-2015 Scott Nelson</p>
+
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/scttnlsn/syphon">Syphon</a> is maintained by <a href="https://github.com/scttnlsn">scttnlsn</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+            <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-44029969-6");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
+
