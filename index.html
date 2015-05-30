@@ -46,22 +46,17 @@
 
 <span class="pl-k">var</span> state <span class="pl-k">=</span> syphon.atom({ text<span class="pl-k">:</span> <span class="pl-s"><span class="pl-pds">'</span>Hello World<span class="pl-pds">'</span></span> });
 
-<span class="pl-k">var</span> dispatcher <span class="pl-k">=</span> syphon.dispatcher({
-  <span class="pl-en">example</span>: <span class="pl-k">function</span> ([<span class="pl-smi">name</span>, <span class="pl-smi">value</span>], <span class="pl-smi">state</span>) {
-    <span class="pl-k">switch</span> (name) {
-      <span class="pl-k">case</span> <span class="pl-s"><span class="pl-pds">'</span>update-text<span class="pl-pds">'</span></span><span class="pl-k">:</span>
-        <span class="pl-k">return</span> state.set(<span class="pl-s"><span class="pl-pds">'</span>text<span class="pl-pds">'</span></span>, value);
-      <span class="pl-k">default</span><span class="pl-k">:</span>
-        <span class="pl-k">return</span> state;
-    }
-  }
+<span class="pl-k">var</span> dispatcher <span class="pl-k">=</span> syphon.dispatcher();
+
+dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>update-text<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">value</span>, <span class="pl-smi">state</span>) {
+  <span class="pl-k">return</span> state.set(<span class="pl-s"><span class="pl-pds">'</span>text<span class="pl-pds">'</span></span>, value);
 });
 
 <span class="pl-k">var</span> Component <span class="pl-k">=</span> React.createClass({
   mixins<span class="pl-k">:</span> [syphon.mixin],
 
   <span class="pl-en">setText</span>: <span class="pl-k">function</span> (<span class="pl-smi">e</span>) {
-    <span class="pl-v">this</span>.dispatch(<span class="pl-s"><span class="pl-pds">'</span>example<span class="pl-pds">'</span></span>, [<span class="pl-s"><span class="pl-pds">'</span>update-text<span class="pl-pds">'</span></span>, e.currentTarget.<span class="pl-c1">value</span>]);
+    <span class="pl-v">this</span>.dispatch(<span class="pl-s"><span class="pl-pds">'</span>update-text<span class="pl-pds">'</span></span>, e.currentTarget.<span class="pl-c1">value</span>);
   },
 
   <span class="pl-en">render</span>: <span class="pl-k">function</span> () {
@@ -129,62 +124,35 @@ state.swap(<span class="pl-k">function</span> (<span class="pl-smi">current</spa
 <li>The handler must return a new immutable state.  Refer to the <a href="http://facebook.github.io/immutable-js/">Immutable.js</a> docs for information about mofifying the state.</li>
 </ul>
 
-<p>Since it is common to have handlers branching on various input values, it can be helpful to use the <a href="http://npm.im/multimethod">multimethod</a> module:</p>
+<p>While handlers are pure functions in the sense that they do not directly mutate application state, they may have other side-effects (such as making a network request or calling out to some other stateful browser API).  Since the handler functions are called synchronously, any asynchronous results must re-dispatched and handled elsewhere:</p>
 
-<div class="highlight highlight-js"><pre><span class="pl-k">var</span> multimethod <span class="pl-k">=</span> <span class="pl-c1">require</span>(<span class="pl-s"><span class="pl-pds">'</span>multimethod<span class="pl-pds">'</span></span>);
+<div class="highlight highlight-js"><pre>dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>fetch-post<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">id</span>, <span class="pl-smi">state</span>) {
+  <span class="pl-k">var</span> self <span class="pl-k">=</span> <span class="pl-v">this</span>;
 
-<span class="pl-k">var</span> example <span class="pl-k">=</span> multimethod()
-  .dispatch(<span class="pl-k">function</span> ([<span class="pl-smi">op</span>, <span class="pl-smi">text</span>], <span class="pl-smi">state</span>) {
-    <span class="pl-k">return</span> op;
-  })
-  .when(<span class="pl-s"><span class="pl-pds">'</span>update-text<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> ([<span class="pl-smi">_</span>, <span class="pl-smi">text</span>], <span class="pl-smi">state</span>) {
-    <span class="pl-k">return</span> state.set(<span class="pl-s"><span class="pl-pds">'</span>text<span class="pl-pds">'</span></span>, text);
-  })
-  .when(<span class="pl-s"><span class="pl-pds">'</span>uppercase-text<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> ([<span class="pl-smi">_</span>, <span class="pl-smi">text</span>], <span class="pl-smi">state</span>) {
-    <span class="pl-k">return</span> state.set(<span class="pl-s"><span class="pl-pds">'</span>text<span class="pl-pds">'</span></span>, state.get(<span class="pl-s"><span class="pl-pds">'</span>text<span class="pl-pds">'</span></span>).<span class="pl-c1">toUpperCase</span>());
+  <span class="pl-c">// Make network request</span>
+  fetchPost(id, <span class="pl-k">function</span> (<span class="pl-smi">err</span>, <span class="pl-smi">post</span>) {
+    <span class="pl-k">if</span> (err) {
+      self.dispatch(<span class="pl-s"><span class="pl-pds">'</span>fetch-post-error<span class="pl-pds">'</span></span>, err);
+    } <span class="pl-k">else</span> {
+      self.dispatch(<span class="pl-s"><span class="pl-pds">'</span>fetch-post-success<span class="pl-pds">'</span></span>, post);
+    }
   });
 
-dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>example<span class="pl-pds">'</span></span>, example);</pre></div>
+  <span class="pl-k">return</span> state.set(<span class="pl-s"><span class="pl-pds">'</span>loading<span class="pl-pds">'</span></span>, <span class="pl-c1">true</span>);
+});
 
-<p>It is also typical for a handler to have side-effects, however, since the handler functions are called synchronously, any asynchronous results must re-dispatched and handled elsewhere:</p>
+dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>fetch-post-success<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">post</span>, <span class="pl-smi">state</span>) {
+  <span class="pl-k">return</span> state
+    .set(<span class="pl-s"><span class="pl-pds">'</span>loading<span class="pl-pds">'</span></span>, <span class="pl-c1">false</span>)
+    .set(<span class="pl-s"><span class="pl-pds">'</span>post<span class="pl-pds">'</span></span>, post);
+});
 
-<div class="highlight highlight-js"><pre><span class="pl-k">var</span> example <span class="pl-k">=</span> multimethod()
-  .dispatch(<span class="pl-k">function</span> ([<span class="pl-smi">name</span>, <span class="pl-smi">value</span>], <span class="pl-smi">state</span>) {
-    <span class="pl-k">return</span> name;
-  })
-  .when(<span class="pl-s"><span class="pl-pds">'</span>fetch-post<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> ([<span class="pl-smi">_</span>, <span class="pl-smi">id</span>], <span class="pl-smi">state</span>) {
-    <span class="pl-k">var</span> self <span class="pl-k">=</span> <span class="pl-v">this</span>;
-
-    <span class="pl-c">// Make network request</span>
-    fetchPost(id, <span class="pl-k">function</span> (<span class="pl-smi">err</span>, <span class="pl-smi">post</span>) {
-      <span class="pl-k">if</span> (err) {
-        self.dispatch(<span class="pl-s"><span class="pl-pds">'</span>api<span class="pl-pds">'</span></span>, [<span class="pl-s"><span class="pl-pds">'</span>fetch-post-error<span class="pl-pds">'</span></span>, err]);
-      } <span class="pl-k">else</span> {
-        self.dispatch(<span class="pl-s"><span class="pl-pds">'</span>api<span class="pl-pds">'</span></span>, [<span class="pl-s"><span class="pl-pds">'</span>fetch-post-success<span class="pl-pds">'</span></span>, post]);
-      }
-    });
-
-    <span class="pl-k">return</span> state.set(<span class="pl-s"><span class="pl-pds">'</span>loading<span class="pl-pds">'</span></span>, <span class="pl-c1">true</span>);
-  });
-
-<span class="pl-k">var</span> api <span class="pl-k">=</span> multimethod()
-  .dispatch(<span class="pl-k">function</span> ([<span class="pl-smi">name</span>, <span class="pl-smi">value</span>], <span class="pl-smi">state</span>) {
-    <span class="pl-k">return</span> name;
-  })
-  .when(<span class="pl-s"><span class="pl-pds">'</span>fetch-post-success<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">post</span>, <span class="pl-smi">state</span>) {
-    <span class="pl-k">return</span> state
-      .set(<span class="pl-s"><span class="pl-pds">'</span>loading<span class="pl-pds">'</span></span>, <span class="pl-c1">false</span>)
-      .set(<span class="pl-s"><span class="pl-pds">'</span>post<span class="pl-pds">'</span></span>, post);
-  })
-  .when(<span class="pl-s"><span class="pl-pds">'</span>fetch-post-error<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">err</span>, <span class="pl-smi">state</span>) {
-    <span class="pl-k">return</span> state
-      .set(<span class="pl-s"><span class="pl-pds">'</span>loading<span class="pl-pds">'</span></span>, <span class="pl-c1">false</span>)
-      .set(<span class="pl-s"><span class="pl-pds">'</span>notice<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>There was an error fetching the post.<span class="pl-pds">'</span></span>)
-      .set(<span class="pl-s"><span class="pl-pds">'</span>error<span class="pl-pds">'</span></span>, err);
-  });
-
-dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>example<span class="pl-pds">'</span></span>, example);
-dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>api<span class="pl-pds">'</span></span>, api);</pre></div>
+dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>fetch-post-error<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">err</span>, <span class="pl-smi">state</span>) {
+  <span class="pl-k">return</span> state
+    .set(<span class="pl-s"><span class="pl-pds">'</span>loading<span class="pl-pds">'</span></span>, <span class="pl-c1">false</span>)
+    .set(<span class="pl-s"><span class="pl-pds">'</span>notice<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>There was an error fetching the post.<span class="pl-pds">'</span></span>)
+    .set(<span class="pl-s"><span class="pl-pds">'</span>error<span class="pl-pds">'</span></span>, err);
+});</pre></div>
 
 <h2>
 <a id="dispatcher" class="anchor" href="#dispatcher" aria-hidden="true"><span class="octicon octicon-link"></span></a>Dispatcher</h2>
@@ -192,16 +160,16 @@ dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>api<span clas
 <p>You will typically only need a single dispatcher per application since it can coordinate multiple handlers.  To add handlers to a dispatcher either pass them to the constructor or call the <code>handler</code> function:</p>
 
 <div class="highlight highlight-js"><pre><span class="pl-k">var</span> dispatcher <span class="pl-k">=</span> syphon.dispatcher({
-  <span class="pl-en">example</span>: <span class="pl-k">function</span> (<span class="pl-smi">value</span>, <span class="pl-smi">state</span>) { ... },
-  <span class="pl-en">api</span>: <span class="pl-k">function</span> (<span class="pl-smi">value</span>, <span class="pl-smi">state</span>) { ... }
+  <span class="pl-en">foo</span>: <span class="pl-k">function</span> (<span class="pl-smi">value</span>, <span class="pl-smi">state</span>) { ... },
+  <span class="pl-en">bar</span>: <span class="pl-k">function</span> (<span class="pl-smi">value</span>, <span class="pl-smi">state</span>) { ... }
 });</pre></div>
 
 <p>or</p>
 
 <div class="highlight highlight-js"><pre><span class="pl-k">var</span> dispatcher <span class="pl-k">=</span> syphon.dispatcher();
 
-dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>example<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">value</span>, <span class="pl-smi">state</span>) { ... });
-dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>api<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">value</span>, <span class="pl-smi">state</span>) { ... });</pre></div>
+dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>foo<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">value</span>, <span class="pl-smi">state</span>) { ... });
+dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>bar<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">value</span>, <span class="pl-smi">state</span>) { ... });</pre></div>
 
 <p>To dispatch a value, call the <code>dispatch</code> function, passing the handler name and any contextual value:</p>
 
@@ -259,7 +227,7 @@ dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>api<span clas
   mixins<span class="pl-k">:</span> [syphon.mixin],
 
   <span class="pl-en">onClick</span>: <span class="pl-k">function</span> () {
-    <span class="pl-v">this</span>.dispatch(<span class="pl-s"><span class="pl-pds">'</span>example<span class="pl-pds">'</span></span>, <span class="pl-s"><span class="pl-pds">'</span>button-clicked<span class="pl-pds">'</span></span>);
+    <span class="pl-v">this</span>.dispatch(<span class="pl-s"><span class="pl-pds">'</span>button-clicked<span class="pl-pds">'</span></span>);
   }
 });</pre></div>
 
