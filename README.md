@@ -23,22 +23,17 @@ var syphon = require('syphon');
 
 var state = syphon.atom({ text: 'Hello World' });
 
-var dispatcher = syphon.dispatcher({
-  example: function ([name, value], state) {
-    switch (name) {
-      case 'update-text':
-        return state.set('text', value);
-      default:
-        return state;
-    }
-  }
+var dispatcher = syphon.dispatcher();
+
+dispatcher.handler('update-text', function (value, state) {
+  return state.set('text', value);
 });
 
 var Component = React.createClass({
   mixins: [syphon.mixin],
 
   setText: function (e) {
-    this.dispatch('example', ['update-text', e.currentTarget.value]);
+    this.dispatch('update-text', e.currentTarget.value);
   },
 
   render: function () {
@@ -113,65 +108,36 @@ function (value, currentState) {
 * The second argument is the current (dereferenced) application state.
 * The handler must return a new immutable state.  Refer to the [Immutable.js](http://facebook.github.io/immutable-js/) docs for information about mofifying the state.
 
-Since it is common to have handlers branching on various input values, it can be helpful to use the [multimethod](http://npm.im/multimethod) module:
+While handlers are pure functions in the sense that they do not directly mutate application state, they may have other side-effects (such as making a network request or calling out to some other stateful browser API).  Since the handler functions are called synchronously, any asynchronous results must re-dispatched and handled elsewhere:
 
 ```js
-var multimethod = require('multimethod');
+dispatcher.handler('fetch-post', function (id, state) {
+  var self = this;
 
-var example = multimethod()
-  .dispatch(function ([op, text], state) {
-    return op;
-  })
-  .when('update-text', function ([_, text], state) {
-    return state.set('text', text);
-  })
-  .when('uppercase-text', function ([_, text], state) {
-    return state.set('text', state.get('text').toUpperCase());
+  // Make network request
+  fetchPost(id, function (err, post) {
+    if (err) {
+      self.dispatch('fetch-post-error', err);
+    } else {
+      self.dispatch('fetch-post-success', post);
+    }
   });
 
-dispatcher.handler('example', example);
-```
+  return state.set('loading', true);
+});
 
-It is also typical for a handler to have side-effects, however, since the handler functions are called synchronously, any asynchronous results must re-dispatched and handled elsewhere:
+dispatcher.handler('fetch-post-success', function (post, state) {
+  return state
+    .set('loading', false)
+    .set('post', post);
+});
 
-```js
-var example = multimethod()
-  .dispatch(function ([name, value], state) {
-    return name;
-  })
-  .when('fetch-post', function ([_, id], state) {
-    var self = this;
-
-    // Make network request
-    fetchPost(id, function (err, post) {
-      if (err) {
-        self.dispatch('api', ['fetch-post-error', err]);
-      } else {
-        self.dispatch('api', ['fetch-post-success', post]);
-      }
-    });
-
-    return state.set('loading', true);
-  });
-
-var api = multimethod()
-  .dispatch(function ([name, value], state) {
-    return name;
-  })
-  .when('fetch-post-success', function (post, state) {
-    return state
-      .set('loading', false)
-      .set('post', post);
-  })
-  .when('fetch-post-error', function (err, state) {
-    return state
-      .set('loading', false)
-      .set('notice', 'There was an error fetching the post.')
-      .set('error', err);
-  });
-
-dispatcher.handler('example', example);
-dispatcher.handler('api', api);
+dispatcher.handler('fetch-post-error', function (err, state) {
+  return state
+    .set('loading', false)
+    .set('notice', 'There was an error fetching the post.')
+    .set('error', err);
+});
 ```
 
 ## Dispatcher
@@ -180,8 +146,8 @@ You will typically only need a single dispatcher per application since it can co
 
 ```js
 var dispatcher = syphon.dispatcher({
-  example: function (value, state) { ... },
-  api: function (value, state) { ... }
+  foo: function (value, state) { ... },
+  bar: function (value, state) { ... }
 });
 ```
 
@@ -190,8 +156,8 @@ or
 ```js
 var dispatcher = syphon.dispatcher();
 
-dispatcher.handler('example', function (value, state) { ... });
-dispatcher.handler('api', function (value, state) { ... });
+dispatcher.handler('foo', function (value, state) { ... });
+dispatcher.handler('bar', function (value, state) { ... });
 ```
 
 To dispatch a value, call the `dispatch` function, passing the handler name and any contextual value:
@@ -256,7 +222,7 @@ var MyComponent = React.createClass({
   mixins: [syphon.mixin],
 
   onClick: function () {
-    this.dispatch('example', 'button-clicked');
+    this.dispatch('button-clicked');
   }
 });
 ```
