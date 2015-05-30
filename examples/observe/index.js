@@ -3,18 +3,10 @@ var syphon = require('../../lib/index');
 
 var state = syphon.atom({ text: 'Hello World' });
 
-var dispatcher = syphon.dispatcher({
-  example: function (obj, state) {
-    var name = obj[0];
-    var value = obj[1];
+var dispatcher = syphon.dispatcher();
 
-    switch (name) {
-      case 'update-text':
-        return state.set('text', value);
-      default:
-        return state;
-    }
-  }
+dispatcher.handler('update-text', function (value, state) {
+  return state.set('text', value);
 });
 
 var Child = React.createClass({
@@ -25,7 +17,7 @@ var Child = React.createClass({
   },
 
   setText: function (e) {
-    this.dispatch('example', ['update-text', e.currentTarget.value]);
+    this.dispatch('update-text', e.currentTarget.value);
   },
 
   render: function () {
