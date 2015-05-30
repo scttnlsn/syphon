@@ -5,8 +5,8 @@ var state = syphon.atom({ text: 'Hello World' });
 
 var dispatcher = syphon.dispatcher();
 
-dispatcher.handler('update-text', function (value, state) {
-  return state.set('text', value);
+dispatcher.handler('update-text', function (state, text) {
+  return state.set('text', text);
 });
 
 var Child = React.createClass({

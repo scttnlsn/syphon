@@ -8,14 +8,14 @@ describe('Dispatcher', function () {
 
     this.run = function () {
       this.dispatcher.start(this.state);
-      this.dispatcher.dispatch('test', 'hello');
+      this.dispatcher.dispatch('test', 'hello', 'world');
     };
   });
 
   it('emits `dispatch` events', function (done) {
     this.dispatcher.once('dispatch', function (dispatch) {
       expect(dispatch.name).to.eq('test');
-      expect(dispatch.value).to.eq('hello');
+      expect(dispatch.args).to.deep.eq(['hello', 'world']);
       expect(dispatch.state.get('foo')).to.eq('bar');
       done();
     });
@@ -24,7 +24,7 @@ describe('Dispatcher', function () {
   });
 
   it('calls handler with dispatched value and current state', function (done) {
-    this.dispatcher.handler('test', function (value, state) {
+    this.dispatcher.handler('test', function (state, value) {
       expect(value).to.eq('hello');
       expect(state.get('foo')).to.eq('bar');
       return state;
@@ -40,7 +40,7 @@ describe('Dispatcher', function () {
   it('calls handler in the context of the dispatcher', function (done) {
     var self = this;
 
-    this.dispatcher.handler('test', function (value, state) {
+    this.dispatcher.handler('test', function (state, value) {
       expect(this).to.eq(self.dispatcher);
       return state;
     });
@@ -55,7 +55,7 @@ describe('Dispatcher', function () {
   it('swaps state with value returned from handler', function (done) {
     var self = this;
 
-    this.dispatcher.handler('test', function (value, state) {
+    this.dispatcher.handler('test', function (state, value) {
       return state.set('foo', 'baz');
     });
 
@@ -71,6 +71,6 @@ describe('Dispatcher', function () {
 
 // Helpers
 
-function noop(value, state) {
+function noop(state, value) {
   return state;
 }

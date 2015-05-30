@@ -25,8 +25,8 @@ var state = syphon.atom({ text: 'Hello World' });
 
 var dispatcher = syphon.dispatcher();
 
-dispatcher.handler('update-text', function (value, state) {
-  return state.set('text', value);
+dispatcher.handler('update-text', function (state, text) {
+  return state.set('text', text);
 });
 
 var Component = React.createClass({
@@ -99,25 +99,25 @@ Refer to the [js-atom](https://github.com/cjohansen/js-atom) docs for more infor
 Handlers are functions of the form:
 
 ```js
-function (value, currentState) {
+function (state, value) {
   return newState;
 }
 ```
 
-* The first argument is the dispatched value.
-* The second argument is the current (dereferenced) application state.
+* The first argument is the current (dereferenced) application state.
+* The remaining arguments are the values passed to `dispatch`
 * The handler must return a new immutable state.  Refer to the [Immutable.js](http://facebook.github.io/immutable-js/) docs for information about mofifying the state.
 
 While handlers are pure functions in the sense that they do not directly mutate application state, they may have other side-effects (such as making a network request or calling out to some other stateful browser API).  Since the handler functions are called synchronously, any asynchronous results must re-dispatched and handled elsewhere:
 
 ```js
-dispatcher.handler('fetch-post', function (id, state) {
+dispatcher.handler('fetch-post', function (state, id) {
   var self = this;
 
   // Make network request
   fetchPost(id, function (err, post) {
     if (err) {
-      self.dispatch('fetch-post-error', err);
+      self.dispatch('fetch-post-error', id, err);
     } else {
       self.dispatch('fetch-post-success', post);
     }
@@ -126,16 +126,16 @@ dispatcher.handler('fetch-post', function (id, state) {
   return state.set('loading', true);
 });
 
-dispatcher.handler('fetch-post-success', function (post, state) {
+dispatcher.handler('fetch-post-success', function (state, post) {
   return state
     .set('loading', false)
     .set('post', post);
 });
 
-dispatcher.handler('fetch-post-error', function (err, state) {
+dispatcher.handler('fetch-post-error', function (state, id, err) {
   return state
     .set('loading', false)
-    .set('notice', 'There was an error fetching the post.')
+    .set('notice', 'There was an error fetching the post with id=' + id)
     .set('error', err);
 });
 ```
@@ -146,8 +146,8 @@ You will typically only need a single dispatcher per application since it can co
 
 ```js
 var dispatcher = syphon.dispatcher({
-  foo: function (value, state) { ... },
-  bar: function (value, state) { ... }
+  foo: function (state, value) { ... },
+  bar: function (state, value) { ... }
 });
 ```
 
@@ -156,14 +156,14 @@ or
 ```js
 var dispatcher = syphon.dispatcher();
 
-dispatcher.handler('foo', function (value, state) { ... });
-dispatcher.handler('bar', function (value, state) { ... });
+dispatcher.handler('foo', function (state, value) { ... });
+dispatcher.handler('bar', function (state, value) { ... });
 ```
 
-To dispatch a value, call the `dispatch` function, passing the handler name and any contextual value:
+To dispatch an action, call the `dispatch` function, passing the handler name and any additional values:
 
 ```js
-dispatcher.dispatch('example', { foo: 'bar', baz: 123 });
+dispatcher.dispatch('example', 'foo', { bar: 123 });
 ```
 
 The dispatcher emits a `dispatch` event after each handler is called:
@@ -171,7 +171,7 @@ The dispatcher emits a `dispatch` event after each handler is called:
 ```js
 dispatcher.on('dispatch', function (dispatch) {
    console.log(dispatch.name);  // name of the handler invoked
-   console.log(dispatch.value); // value passed to the handler
+   console.log(dispatch.args);  // additional args passed to the handler
    console.log(dispatch.state); // state returned from the handler
 });
 ```
@@ -215,7 +215,7 @@ The Syphon mixin adds some helpers to your components that make it easier to dis
 
 By using the mixin you can...
 
-Dispatch new values:
+Dispatch new actions:
 
 ```js
 var MyComponent = React.createClass({
