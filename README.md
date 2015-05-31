@@ -108,7 +108,7 @@ function (state, value) {
 * The remaining arguments are the values passed to `dispatch`
 * The handler must return a new immutable state.  Refer to the [Immutable.js](http://facebook.github.io/immutable-js/) docs for information about mofifying the state.
 
-While handlers are pure functions in the sense that they do not directly mutate application state, they may have other side-effects (such as making a network request or calling out to some other stateful browser API).  Since the handler functions are called synchronously, any asynchronous results must re-dispatched and handled elsewhere:
+While handlers are pure functions in the sense that they do not directly mutate application state, they may have other side-effects (such as making a network request or calling out to some other stateful browser API).  Since the handler functions are called synchronously, any asynchronous results must be re-dispatched and handled elsewhere:
 
 ```js
 dispatcher.handler('fetch-post', function (state, id) {
