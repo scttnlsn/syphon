@@ -125,7 +125,7 @@ state.swap(<span class="pl-k">function</span> (<span class="pl-smi">current</spa
 <li>The handler must return a new immutable state.  Refer to the <a href="http://facebook.github.io/immutable-js/">Immutable.js</a> docs for information about mofifying the state.</li>
 </ul>
 
-<p>While handlers are pure functions in the sense that they do not directly mutate application state, they may have other side-effects (such as making a network request or calling out to some other stateful browser API).  Since the handler functions are called synchronously, any asynchronous results must re-dispatched and handled elsewhere:</p>
+<p>While handlers are pure functions in the sense that they do not directly mutate application state, they may have other side-effects (such as making a network request or calling out to some other stateful browser API).  Since the handler functions are called synchronously, any asynchronous results must be re-dispatched and handled elsewhere:</p>
 
 <div class="highlight highlight-js"><pre>dispatcher.handler(<span class="pl-s"><span class="pl-pds">'</span>fetch-post<span class="pl-pds">'</span></span>, <span class="pl-k">function</span> (<span class="pl-smi">state</span>, <span class="pl-smi">id</span>) {
   <span class="pl-k">var</span> self <span class="pl-k">=</span> <span class="pl-v">this</span>;
